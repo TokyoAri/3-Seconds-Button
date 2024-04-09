@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title> 3 Seconds Button</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.20/c3.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+</head>
+<body>
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12 text-center">
+            <button id="startButton" style="width: 300px; height: 80px;" >START</button>
+            <div id="resultText" class="mt-3"></div>
+            <button id="summaryButton" class="btn btn-info mt-3">Summary</button>
+            <div id="attemptSummary" class="mt-3"></div>
+            <div id="resultSummary" class="mt-3"></div>
+            <div id="chart" class="mt-3"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.20/c3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+
+<script type="text/javascript">
+
+    const secondsTime = 3; // GOAL IN SECONDS
+    let startTime;
+    let isRunning = false;
+    let attempts = [];
+
+    document.getElementById('startButton').addEventListener('click', function() {
+        if (!isRunning) {
+            this.textContent = 'Stop';
+            startTime = new Date().getTime(); //START TIME
+            isRunning = true;
+        } else {
+            this.textContent = 'Start';
+            let stopTime = new Date().getTime(); //STOP TIME
+            let elapsedTime = (stopTime - startTime) / 1000;
+            evaluateResult(elapsedTime);
+            attempts.push({attempt: attempts.length + 1, start: startTime, stop: stopTime, duration: elapsedTime});
+            isRunning = false;
+        }
+    });
+
+    document.getElementById('summaryButton').addEventListener('click', function() {
+        evaluateSummary();
+    });
+
+    // RESULTS
+    function evaluateResult(elapsedTime) {
+        let resultText = document.getElementById('resultText');
+        let body = document.body;
+
+        resultText.style.color = 'black';
+        resultText.style.fontWeight = 'bold';
+
+        if (elapsedTime === secondsTime) {
+            resultText.textContent = 'Perfect! Your time is exactly ' + elapsedTime + ' seconds.';
+            resultText.className = 'text-success bg-light';
+            body.style.backgroundColor = '#4CAF50';
+        } else if (Math.abs(elapsedTime - secondsTime) <= 0.2) {
+            resultText.textContent = 'Nice! Your time is ' + elapsedTime + ' seconds.';
+            resultText.className = 'text-primary bg-light';
+            body.style.backgroundColor = '#2196F3';
+        } else if (Math.abs(elapsedTime - secondsTime) <= 0.5) {
+            resultText.textContent = 'Good! Your time is ' + elapsedTime + ' seconds.';
+            resultText.className = 'text-warning bg-light';
+            body.style.backgroundColor = '#FFC107';
+        } else {
+            resultText.textContent = 'Sorry! Your time is ' + elapsedTime + ' seconds.';
+            resultText.className = 'text-danger bg-light';
+            body.style.backgroundColor = '#f44336';
+        }
+    }
+
+
+    function evaluateSummary() {//SUMMARY ATTEMPTS
+        let attemptSummary = document.getElementById('attemptSummary');
+        attemptSummary.innerHTML = '<h4>Attempt Summary</h4>';
+        attempts.forEach(function(attempt) {
+            let attemptDetails = 'Attempt ' + attempt.attempt + ': Start - ' + new Date(attempt.start).toLocaleTimeString() +
+                ', Stop - ' + new Date(attempt.stop).toLocaleTimeString() +
+                ', Duration - ' + attempt.duration.toFixed(3) + ' seconds';
+            attemptSummary.innerHTML += '<p>' + attemptDetails + '</p>';
+        });
+        let resultSummary = document.getElementById('resultSummary');
+        let totalAttempts = attempts.length;
+        let minTime = Math.min.apply(Math, attempts.map(function(a) { return a.duration; }));
+        let maxTime = Math.max.apply(Math, attempts.map(function(a) { return a.duration; }));
+        let avgTime = attempts.reduce(function(acc, cur) { return acc + cur.duration; }, 0) / totalAttempts;
+
+        resultSummary.innerHTML = '<h4>Result Summary</h4>' +
+            '<p>Total Attempts: ' + totalAttempts +
+            ', Min: ' + minTime.toFixed(3) +
+            ', Max: ' + maxTime.toFixed(3) +
+            ', Avg: ' + avgTime.toFixed(3) + '</p>';
+    }
+    document.getElementById('summaryButton').addEventListener('click', function() {
+        evaluateSummary();
+        generateChart();
+    });
+
+    //CHART
+    function generateChart() {
+        let durationData = ['Duration'];
+        attempts.forEach(function(attempt) {
+            durationData.push(attempt.duration);
+        });
+        c3.generate({
+            bindto: '#chart',
+            data: {
+                columns: [
+                    durationData
+                ],
+                type: 'bar'
+            },
+            axis: {
+                x: {
+                    label: 'Attempt Number'
+                },
+                y: {
+                    label: 'Duration (seconds)'
+                }
+            }
+        });
+    }
+</script>
+</body>
+</html>
